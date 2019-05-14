@@ -7,7 +7,6 @@ channels:
   - defaults
 dependencies:
   - anaconda=custom
-  - appnope=0.1.0
   - asn1crypto=0.24.0
   - attrs=19.1.0
   - backcall=0.1.0
@@ -73,11 +72,8 @@ dependencies:
   - kiwisolver=1.1.0
   - libblas=3.8.0
   - libcblas=3.8.0
-  - libcxx=4.0.1
-  - libcxxabi=4.0.1
   - libedit=3.1.20181209
   - libffi=3.2.1
-  - libgfortran=3.0.1
   - libiconv=1.15
   - libjpeg-turbo=2.0.2
   - liblapack=3.8.0
@@ -183,4 +179,3 @@ dependencies:
   - pip:
     - pillow-simd==5.3.0.post1
 prefix: /Users/athon/anaconda3/envs/thesis
-
