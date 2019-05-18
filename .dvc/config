@@ -1,0 +1,4 @@
+['remote "gcp_remote"']
+url = gs://athon-research/
+[core]
+remote = gcp_remote
