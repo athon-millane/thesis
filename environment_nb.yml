@@ -22,6 +22,9 @@ dependencies:
   - certifi=2019.3.9
   - cffi=1.12.3
   - chardet=3.0.4
+  - cryptography=2.6.1
+  - cudatoolkit=9.0
+  - cudnn=7.3.1
   - cycler=0.10.0
   - cymem=2.0.2
   - cython=0.29.7
@@ -34,18 +37,22 @@ dependencies:
   - docutils=0.14
   - entrypoints=0.3
   - expat=2.2.6
+  - fontconfig=2.13.0
   - freetype=2.9.1
   - genepattern-notebook=0.8.5
   - genepattern-python=1.4.3
   - gensim=3.4.0
   - gettext=0.19.8.1
   - glib=2.56.2
+  - gmp=6.1.2
   - google-api-core=1.10.0
   - google-auth=1.6.3
   - google-cloud-core=0.29.1
   - google-cloud-storage=1.15.0
   - google-resumable-media=0.3.2
   - googleapis-common-protos=1.5.9
+  - gst-plugins-base=1.14.0
+  - gstreamer=1.14.0
   - icu=58.2
   - idna=2.8
   - intel-openmp=2019.3
@@ -56,6 +63,7 @@ dependencies:
   - jedi=0.13.3
   - jinja2=2.10.1
   - jmespath=0.9.4
+  - joblib=0.13.2
   - jpeg=9b
   - jsonschema=3.0.1
   - jupyter=1.0.0
@@ -70,6 +78,8 @@ dependencies:
   - libcblas=3.8.0
   - libedit=3.1.20181209
   - libffi=3.2.1
+  - libgcc-ng=8.2.0
+  - libgfortran-ng=7.3.0
   - libiconv=1.15
   - libjpeg-turbo=2.0.2
   - liblapack=3.8.0
@@ -78,10 +88,17 @@ dependencies:
   - libpng=1.6.37
   - libprotobuf=3.7.1
   - libsodium=1.0.16
+  - libstdcxx-ng=8.2.0
+  - libtiff=4.0.10
+  - libuuid=1.0.3
+  - libxcb=1.13
+  - libxml2=2.9.9
+  - lz4=2.1.6
+  - lz4-c=1.8.1.2
   - markupsafe=1.1.1
   - matplotlib=3.0.3
   - mistune=0.8.4
-  - mkl=2019.3
+  - mkl=2018.0.3
   - mkl_fft=1.0.1
   - mkl_random=1.0.1
   - msgpack-numpy=0.4.3.2
@@ -92,6 +109,7 @@ dependencies:
   - nbconvert=5.5.0
   - nbformat=4.4.0
   - nbtools=0.2.4
+  - nccl=1.3.5
   - ncurses=6.1
   - ninja=1.9.0
   - notebook=5.7.8
@@ -109,12 +127,14 @@ dependencies:
   - pcre=8.43
   - pexpect=4.7.0
   - pickleshare=0.7.5
+  - pillow=6.0.0
   - pip=19.1.1
   - plac=0.9.6
   - preshed=2.0.1
   - prometheus_client=0.6.0
   - prompt_toolkit=2.0.9
   - protobuf=3.7.1
+  - pthread-stubs=0.3
   - ptyprocess=0.6.0
   - pyasn1=0.4.5
   - pyasn1-modules=0.2.4
@@ -124,7 +144,7 @@ dependencies:
   - pyparsing=2.4.0
   - pyqt=5.9.2
   - pyrsistent=0.14.11
-  - pysocks=1.6.8
+  - pysocks=1.7.0
   - python=3.6.8
   - python-dateutil=2.8.0
   - pytorch=1.1.0
@@ -135,10 +155,9 @@ dependencies:
   - qtconsole=4.4.4
   - readline=7.0
   - regex=2019.04.14
-  - requests=2.21.0
   - rsa=3.4.2
   - s3transfer=0.2.0
-  - scikit-learn=0.20.3
+  - scikit-learn=0.21.1
   - scipy=1.2.1
   - send2trash=1.5.0
   - setuptools=41.0.1
@@ -146,11 +165,9 @@ dependencies:
   - six=1.12.0
   - smart_open=1.8.2
   - soupsieve=1.8
-  - spacy=2.0.16
   - sqlite=3.28.0
   - terminado=0.8.2
   - testpath=0.4.2
-  - thinc=6.12.1
   - tk=8.6.8
   - toolz=0.9.0
   - torchvision=0.2.2
@@ -162,14 +179,58 @@ dependencies:
   - urllib3=1.24.2
   - wcwidth=0.1.7
   - webencodings=0.5.1
-  - wheel=0.33.2
+  - wheel=0.33.4
   - widgetsnbextension=3.4.2
   - wrapt=1.10.11
+  - xorg-libxau=1.0.9
+  - xorg-libxdmcp=1.1.3
   - xz=5.2.4
   - yaml=0.1.7
   - zeromq=4.3.1
   - zlib=1.2.11
   - zstd=1.3.7
   - pip:
+    - appdirs==1.4.3
+    - asciimatics==1.11.0
+    - bcrypt==3.1.6
+    - blessings==1.7
+    - blis==0.2.4
+    - colorama==0.4.1
+    - configobj==5.0.6
+    - configparser==3.7.4
+    - contextlib2==0.5.5
+    - distro==1.4.0
+    - dulwich==0.19.11
+    - dvc==0.40.7
+    - fastai==1.0.52
+    - fastprogress==0.1.21
+    - future==0.17.1
+    - gitdb2==2.0.5
+    - gitpython==2.1.11
+    - google-compute-engine==2.8.13
+    - gpustat==0.5.0
+    - grandalf==0.6
+    - humanize==0.5.1
+    - inflect==2.1.0
+    - jsonpath-ng==1.4.3
+    - nanotime==0.5.2
+    - networkx==2.3
+    - nvidia-ml-py3==7.352.0
+    - paramiko==2.4.2
     - pillow-simd==5.3.0.post1
-prefix: /Users/athon/anaconda3/envs/thesis
+    - ply==3.11
+    - psutil==5.6.2
+    - pyfiglet==0.8.post1
+    - pynacl==1.3.0
+    - requests==2.22.0
+    - ruamel-yaml==0.15.96
+    - schema==0.7.0
+    - smmap2==2.0.5
+    - spacy==2.1.4
+    - srsly==0.0.5
+    - thinc==7.0.4
+    - treelib==1.5.5
+    - wasabi==0.2.2
+    - zc-lockfile==1.4
+prefix: /home/athon/.conda/envs/thesis
+
