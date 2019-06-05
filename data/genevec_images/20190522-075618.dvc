@@ -1,0 +1,8 @@
+md5: 1e6042a5faa430f8ada74054b6bc4b3e
+wdir: .
+outs:
+- md5: 30b5d453868a0e93975555a0c8f75cc3.dir
+  path: 20190522-075618
+  cache: true
+  metric: false
+  persist: false
