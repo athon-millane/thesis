@@ -1,0 +1,8 @@
+md5: 5f0314329f8ab20f7c44d395c202f22d
+wdir: .
+outs:
+- md5: 7219e6e5e68883461f8de0a7a74f3f03.dir
+  path: gene2vec
+  cache: true
+  metric: false
+  persist: false
