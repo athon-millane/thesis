@@ -169,7 +169,55 @@ def vis_clustered_images(genes, dims, clustering_algos, n_clusters=25):
             plot_num += 1
             
 
-def vis_image_norm_colours(df_genevec, df_somatic, clusters, norms, colours, sample=5000):
+def vis_clustered_2d(genes, clustering_algos, clusters, dim=128):
+    """
+    Visualise genes sorted by cluster with different clustering algos and genevec dimensions.
+    """
+    plt.figure(figsize=(24, 24))
+    plt.suptitle("Images from different clustering algorithms and genevec model dimensions.")  
+    plt.tight_layout()
+    plt.subplots_adjust(top=0.95)
+    
+    plot_num = 1
+    for cluster in clusters:
+        # load data
+        filename = GENE2VEC_DIR + 'dim_{}/iter_10'.format(dim)
+        wv, vocab = load_embeddings(filename)
+        
+        # get gene subset
+        df_genevec = pd.DataFrame(wv.transpose(), columns=vocab)
+        gene_subset = df_genevec[genes].values.transpose()
+        
+        # initialise algos on gene subset
+        X = gene_subset
+        algos = init_algos(X.transpose(), n_clusters=cluster)
+        algos = tuple([algo for algo in algos if algo[0] in clustering_algos])
+        y_preds_1 = Parallel()(delayed(cluster_job)((name, algo, X.transpose())) for name, algo in algos)
+        
+        other_algos = ['Unsorted', 'Spectral BiClustering']
+        algos_ = clustering_algos + other_algos
+        for i, name in enumerate(algos_):
+            if name == 'Unsorted':                      # Do nothing
+                X = X
+            elif (name == 'Spectral BiClustering'):     # Try out biclustering
+                model = SpectralBiclustering(n_clusters=(cluster, cluster), method='log',random_state=0).fit(X)
+                X = X[np.argsort(model.row_labels_)]
+                X = X[:, np.argsort(model.column_labels_)]
+            else:                                       # Regular clustering gridsearch
+                y_pred_1 = y_preds_1[i]
+                X = X[:,np.argsort(y_pred_1)]          # first dimension (vector dimensions)
+                algos = init_algos(X, n_clusters=cluster)
+                algos = tuple([algo for algo in algos if algo[0] in clustering_algos])
+                y_pred_2 = cluster_job((algos[i][0],algos[i][1],X))
+                X = X[np.argsort(y_pred_2),:]
+            
+            plt.subplot(len(clusters), len(algos_), plot_num)
+            plt.title('{}, Num Clusters = {}'.format(name, cluster))
+            plt.imshow(pd.DataFrame(X.transpose()), aspect='auto')
+            plot_num += 1
+
+    
+def vis_image_norm_colours(df_genevec, df_somatic, clusters1, clusters2, norms, colours, sample=5000):
     """
     Visualise how normalisation and colours alter appearance. 
     Apply to real data sample given by index.
@@ -183,21 +231,50 @@ def vis_image_norm_colours(df_genevec, df_somatic, clusters, norms, colours, sam
     for norm in norms:
         if (norm == 'none'):            # Leave X as is 
             image = df_somatic.transpose().values[:,sample] * df_genevec.values
-            X = image[:,np.argsort(clusters)]
+            print(image.shape)
+            X = image[np.argsort(clusters1),:]
+            X = X[:,np.argsort(clusters2)]
         elif (norm == 'non-zero'):      # 0,1 normalise all non zero data
             df_genevec_norm = MinMaxScaler().fit_transform(df_genevec.values)
             image = df_somatic.transpose().values[:,sample] * df_genevec_norm
-            X = image[:,np.argsort(clusters)]
+            X = image[np.argsort(clusters1),:]
+            X = X[:,np.argsort(clusters2)]
         elif (norm == 'abs value'):     # Take abs value of X
             image = df_somatic.transpose().values[:,sample] * df_genevec.values
-            sorted_image = image[:,np.argsort(clusters)]
-            X = np.absolute(sorted_image)
+            X = image[np.argsort(clusters1),:]
+            X = X[:,np.argsort(clusters2)]
+            X = np.absolute(X)
         
         for colour in colours:
             plt.subplot(len(norms), len(colours), plot_num)
             plt.title('Colour: {}, Norm: {}'.format(colour, norm))
             plt.imshow(pd.DataFrame(X), aspect='auto', cmap=colour)
-            plot_num += 1            
+            plot_num += 1   
+
+
+def generate_imageset(df_genevec, df_somatic, cluster1, cluster2, norm):
+    """
+    Visualise how normalisation and colours alter appearance. 
+    Apply to real data sample given by index.
+    """
+    
+    plot_num = 1
+    somatic = np.repeat(df_somatic.values[:, :, np.newaxis], df_genevec.shape[0], axis=2).transpose([0,2,1])
+    if (norm == 'none'):            # Leave X as is 
+        images = somatic * df_genevec.values
+        X = images[:,np.argsort(cluster1),:]
+        X = X[:,:,np.argsort(cluster2)]
+    elif (norm == 'non-zero'):      # 0,1 normalise all non zero data
+        df_genevec_norm = MinMaxScaler().fit_transform(df_genevec.values)
+        images = somatic * df_genevec_norm
+        X = images[:,np.argsort(cluster1),:]
+        X = X[:,:,np.argsort(cluster2)]
+    elif (norm == 'abs-value'):     # Take abs value of X
+        images = somatic * df_genevec.values
+        X = images[:,np.argsort(cluster1),:]
+        X = X[:,:,np.argsort(cluster2)]
+        X = np.absolute(X)
+    return X
 
 
 def vis_norm_histogram(df_genevec, df_somatic, clusters, norms, sample=5000):

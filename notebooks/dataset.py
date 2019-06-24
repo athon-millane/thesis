@@ -1,12 +1,15 @@
 # Absurdly, necessary image processing functions to create FastAI accepted dataset from 3D Numpy batches of images
+from sklearn.model_selection import train_test_split
+import os, pandas as pd, matplotlib.image as img
+
 
 def create_labels_df(df_y):
     """    
     Create labels df.
     """
-    labels_df = (df_y4.copy()
-                  .reset_index()
-                  .rename(columns={'case_barcode':'name', 'project_short_name':'label'}))
+    labels_df = (df_y.copy()
+                 .reset_index()
+                 .rename(columns={'case_barcode':'name', 'project_short_name':'label'}))
     
     return labels_df
     
@@ -27,7 +30,7 @@ def create_labels_csv(labels_df, y_train, y_valid, savedir, img_format='png'):
     pd.concat([train_labels, valid_labels]).to_csv(savedir + 'labels.csv', index=False)
 
 
-def generate_dataset(X, y, data_base='../data/genevec_images/', test_size=0.2):
+def generate_dataset(X, y, data_dir, colour, test_size=0.2):
     """
     Generate image dataset folder structure as per MNIST and other common image datasets.
     """
@@ -44,8 +47,7 @@ def generate_dataset(X, y, data_base='../data/genevec_images/', test_size=0.2):
     X_valid, X_test, y_valid, y_test = train_test_split(X_other, y_other, test_size=0.5,
                                                         random_state=42, stratify=y_other)
     
-    # Save all data to data directory
-    data_dir = '{}{}'.format(data_base, time.strftime("%Y%m%d-%H%M%S"))
+    # Create data directory
     if not os.path.exists(data_dir):
         os.mkdir(data_dir)
         
@@ -64,7 +66,7 @@ def generate_dataset(X, y, data_base='../data/genevec_images/', test_size=0.2):
             for j, row in enumerate(ys[i]):
                 image_name = '{}.png'.format(labels_df.loc[ys[i].index[j]]['name'])
                 img_path = path + '/' + image_name
-                img.imsave(img_path, Xs[i][j,:,:])
+                img.imsave(img_path, Xs[i][j,:,:], cmap=colour)
         else:
             for label in set(ys[i].values):
                 path_ = path + '/' + label
@@ -74,4 +76,4 @@ def generate_dataset(X, y, data_base='../data/genevec_images/', test_size=0.2):
                     if row == label:
                         image_name = '{}.png'.format(labels_df.loc[ys[i].index[j]]['name'])
                         img_path = path_ + '/' + image_name
-                        img.imsave(img_path, Xs[i][j,:,:])
+                        img.imsave(img_path, Xs[i][j,:,:], cmap=colour)
