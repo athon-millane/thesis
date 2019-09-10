@@ -123,7 +123,7 @@ def vis_pca2_genevec():
     for dim in dims:
         for iter_ in iters:
             # load data
-            filename = GENE2VEC + 'dim_{}/iter_{}'.format(dim, iter_)
+            filename = str(GENE2VEC / 'dim_{}/iter_{}'.format(dim, iter_))
             wv, vocab = load_embeddings(filename)
             
             # run pca_2
@@ -160,7 +160,7 @@ def vis_scree_genevec():
     for dim in dims:
         for iter_ in iters:
             # load data
-            filename = GENE2VEC + 'dim_{}/iter_{}'.format(dim, iter_)
+            filename = str(GENE2VEC / 'dim_{}/iter_{}'.format(dim, iter_))
             wv, vocab = load_embeddings(filename)
             
             # run pca

@@ -1,8 +1,0 @@
-md5: ed8d930d99a5f0a35fe697d1e3a7b493
-wdir: .
-outs:
-- md5: cf92f7f73ab01e9b4bb24771f9609d2b.dir
-  path: mnist_tiny
-  cache: true
-  metric: false
-  persist: false

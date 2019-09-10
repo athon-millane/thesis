@@ -1,8 +1,0 @@
-md5: 7f91dd9d8f909cafac69bfc042b16025
-wdir: .
-outs:
-- md5: ea66ca263e2a13e5708efabb373ec11c.dir
-  path: planet_tiny
-  cache: true
-  metric: false
-  persist: false
