@@ -8,6 +8,8 @@ from Bio.SeqFeature import FeatureLocation, CompoundLocation
 import networkx as nx
 import seaborn as sns
 
+import sys; sys.path.append("../tools"); from config import *
+
 def process_fasta(fname, c1, c2, filter_txt=None):
     from tqdm import tqdm_notebook
     genome = SeqIO.parse(fname, 'fasta')
@@ -32,6 +34,56 @@ def process_fasta(fname, c1, c2, filter_txt=None):
     data = [clean_genome[i:i+c2] for i in range(0, len(clean_genome), c2)]
     
     return data
+
+
+
+def generate_fixed_vocab(df_train, df_val, ngram=3, stride=1):
+    """Create fixed length tokenizer, initialise databunch and return vocabulary."""
+    
+    # initialise tokeniser
+    tok = Tokenizer(partial(GenomicTokenizer, ngram=ngram, stride=stride), 
+                    n_cpus=96,
+                    pre_rules=[],
+                    post_rules=[],
+                    special_cases=[])
+    
+    data = GenomicTextLMDataBunch.from_df(HUMAN, df_train, df_val, bs=BATCH_SIZE, tokenizer=tok, 
+                              chunksize=NROWS_TRAIN, text_cols=0, label_cols=1, max_vocab=((4**ngram)+1))
+
+    # Save and load vocab
+    np.save(HUMAN / 'fixed_vocab_{}m{}s.npy'.format(ngram,stride), data.vocab.itos)
+    return data, data.vocab.itos
+
+def generate_variable_vocab(df_train, df_val, size=128):
+    """Create variable length vocabulary using SentencePiece tokenisation.
+    """
+    spm = 'spm_{}_rows_{}_tok'.format(df_train.shape[0], size)
+    if os.path.exists(HUMAN/spm): # load cached SP model and use for tokenisation
+        SPM = HUMAN/spm
+        sp_proc = SPProcessor(char_coverage=1, 
+                              vocab_sz=size,
+                              n_cpus = 96,
+                              pre_rules=[],
+                              post_rules=[],
+                              sp_model=SPM/'spm.model',
+                              sp_vocab=SPM/'spm.vocab')
+    else: # train model and save at that directory
+        sp_proc = SPProcessor(char_coverage=1, 
+                              vocab_sz=size,
+                              n_cpus = 96,
+                              pre_rules=[],
+                              post_rules=[],
+                              tmp_dir=spm)
+    
+    data = GenomicTextLMDataBunch.from_df(
+        HUMAN, df_train, df_val, bs=BATCH_SIZE, processor=sp_proc,
+        chunksize=NROWS_TRAIN, text_cols=0, label_cols=1, max_vocab=size
+    )
+    
+    # Save and load vocab
+    np.save(HUMAN / 'variable_vocab_{}tok.npy'.format(size), data.vocab.itos)
+    return data, data.vocab.itos
+
 
 def split_data(df, pct):
     cut = int(len(df)*pct) + 1
