@@ -299,7 +299,7 @@ def get_scores(learn, ret=False):
         return preds
 
 def get_model_LM(data, drop_mult, config, wd=1e-2):
-    vocab_size = len(data.vocab.stoi)
+    vocab_size = len(data.vocab.itos)
     for k in config.keys(): 
         if k.endswith('_p'): config[k] *= drop_mult
             
@@ -315,7 +315,7 @@ def get_model_LM(data, drop_mult, config, wd=1e-2):
 
 def get_model_clas(data, drop_mult, config, lin_ftrs=None, ps=None, bptt=70, max_len=20*70, wd=1e-2, clip=None):
     n_class = data.c
-    vocab_size = len(data.vocab.stoi)
+    vocab_size = len(data.vocab.itos)
     for k in config.keys(): 
         if k.endswith('_p'): config[k] *= drop_mult
     
