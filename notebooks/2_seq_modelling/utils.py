@@ -37,32 +37,49 @@ def process_fasta(fname, c1, c2, filter_txt=None):
 
 
 
-def generate_fixed_vocab(df_train, df_val, ngram=3, stride=1):
+def tok_fixed(df_train, df_val, ngram=3, stride=1, bs=64, clas=False):
     """Create fixed length tokenizer, initialise databunch and return vocabulary."""
     
     # initialise tokeniser
     tok = Tokenizer(partial(GenomicTokenizer, ngram=ngram, stride=stride), 
-                    n_cpus=96,
+                    n_cpus=N_CPUS,
                     pre_rules=[],
                     post_rules=[],
                     special_cases=[])
     
-    data = GenomicTextLMDataBunch.from_df(HUMAN, df_train, df_val, bs=BATCH_SIZE, tokenizer=tok, 
-                              chunksize=NROWS_TRAIN, text_cols=0, label_cols=1, max_vocab=((4**ngram)+1))
+    vocab = 'fixed_vocab_{}m{}s.npy'.format(ngram,stride)
+    if os.path.exists(HUMAN / vocab):
+        print('Vocab found: loading vocab: {}'.format(vocab))
+        VOCAB = GenomicVocab(np.load(HUMAN/vocab))
+    else:
+        VOCAB = None
+    
+    if clas:
+        data = GenomicTextClasDataBunch.from_df(HUMAN, df_train, df_val, tokenizer=tok,
+                                                text_cols='Sequence', label_cols='Target', 
+                                                vocab=VOCAB, bs=bs, chunksize=NROWS_TRAIN)
+        
+    else:
+        data = GenomicTextLMDataBunch.from_df(HUMAN, df_train, df_val, bs=bs, 
+                                              tokenizer=tok, chunksize=NROWS_TRAIN, 
+                                              text_cols=0, label_cols=1, 
+                                              vocab=VOCAB, max_vocab=((4**ngram)+1))
 
-    # Save and load vocab
-    np.save(HUMAN / 'fixed_vocab_{}m{}s.npy'.format(ngram,stride), data.vocab.itos)
+        # Save and load vocab
+        np.save(HUMAN / vocab, data.vocab.itos)
+        
     return data, data.vocab.itos
 
-def generate_variable_vocab(df_train, df_val, size=128):
+def tok_variable(df_train, df_val, size=128, bs=64, clas=False):
     """Create variable length vocabulary using SentencePiece tokenisation.
     """
-    spm = 'spm_{}_rows_{}_tok'.format(df_train.shape[0], size)
+    spm = 'spm_{}_rows_{}_tok'.format(NROWS_TRAIN, size)
     if os.path.exists(HUMAN/spm): # load cached SP model and use for tokenisation
+        print('SP model found: loading model: {}'.format(spm))
         SPM = HUMAN/spm
         sp_proc = SPProcessor(char_coverage=1, 
                               vocab_sz=size,
-                              n_cpus = 96,
+                              n_cpus = N_CPUS,
                               pre_rules=[],
                               post_rules=[],
                               sp_model=SPM/'spm.model',
@@ -75,15 +92,34 @@ def generate_variable_vocab(df_train, df_val, size=128):
                               post_rules=[],
                               tmp_dir=spm)
     
-    data = GenomicTextLMDataBunch.from_df(
-        HUMAN, df_train, df_val, bs=BATCH_SIZE, processor=sp_proc,
-        chunksize=NROWS_TRAIN, text_cols=0, label_cols=1, max_vocab=size
-    )
+    
+    if clas:
+        data = GenomicTextClasDataBunch.from_df(HUMAN, df_train, df_val, processor=sp_proc,
+                                                text_cols='Sequence', label_cols='Target', 
+                                                bs=bs, chunksize=NROWS_TRAIN)
+        
+    else:
+        data = GenomicTextLMDataBunch.from_df(
+            HUMAN, df_train, df_val, bs=bs, processor=sp_proc,
+            chunksize=NROWS_TRAIN, text_cols=0, label_cols=1, max_vocab=size)
     
     # Save and load vocab
     np.save(HUMAN / 'variable_vocab_{}tok.npy'.format(size), data.vocab.itos)
     return data, data.vocab.itos
 
+
+def partition_data(df_in, split=0.8):
+    
+    train_size = int(len(df_in)*split)
+    valid_size = int(len(df_in)) - train_size
+        
+    train_df = df_in.sample(train_size)
+    valid_df = df_in.drop(train_df.index)
+    
+    train_df['set'] = 'train'
+    valid_df['set'] = 'valid'
+        
+    return pd.concat([train_df, valid_df])
 
 def split_data(df, pct):
     cut = int(len(df)*pct) + 1
@@ -177,13 +213,15 @@ def _get_genomic_processor(tokenizer:Tokenizer=None,
 class GenomicTextLMDataBunch(TextLMDataBunch):
     @classmethod
     def from_df(cls, path:PathOrStr, train_df:DataFrame, valid_df:DataFrame, test_df:Optional[DataFrame]=None,
-                processor:SPProcessor=None, tokenizer:Tokenizer=None, vocab:Vocab=None, classes:Collection[str]=None, text_cols:IntsOrStrs=1,
-                label_cols:IntsOrStrs=0, label_delim:str=None, chunksize:int=10000, max_vocab:int=60000,
-                min_freq:int=2, mark_fields:bool=False, bptt=70, collate_fn:Callable=data_collate, bs=64, **kwargs):
+                processor:SPProcessor=None, tokenizer:Tokenizer=None, vocab:Vocab=None, 
+                classes:Collection[str]=None, text_cols:IntsOrStrs=1, label_cols:IntsOrStrs=0, 
+                label_delim:str=None, chunksize:int=10000, max_vocab:int=60000, min_freq:int=2, 
+                mark_fields:bool=False, bptt=70, collate_fn:Callable=data_collate, bs=64, **kwargs):
         "Create a `TextDataBunch` from DataFrames. `kwargs` are passed to the dataloader creation."
         if processor is None:
-            processor = _get_genomic_processor(tokenizer=tokenizer, vocab=vocab, chunksize=chunksize, max_vocab=max_vocab,
-                                   min_freq=min_freq, mark_fields=mark_fields)
+            processor = _get_genomic_processor(tokenizer=tokenizer, vocab=vocab, 
+                                               chunksize=chunksize, max_vocab=max_vocab,
+                                               min_freq=min_freq, mark_fields=mark_fields)
         
         if classes is None and is_listy(label_cols) and len(label_cols) > 1: 
             classes = label_cols
@@ -207,12 +245,15 @@ class GenomicTextLMDataBunch(TextLMDataBunch):
 class GenomicTextClasDataBunch(TextClasDataBunch):
     @classmethod
     def from_df(cls, path:PathOrStr, train_df:DataFrame, valid_df:DataFrame, test_df:Optional[DataFrame]=None,
-                tokenizer:Tokenizer=None, vocab:Vocab=None, classes:Collection[str]=None, text_cols:IntsOrStrs=1,
-                label_cols:IntsOrStrs=0, label_delim:str=None, chunksize:int=10000, max_vocab:int=60000,
-                min_freq:int=2, mark_fields:bool=False, pad_idx=0, pad_first=True, bs=64, **kwargs) -> DataBunch:
+                processor:SPProcessor=None, tokenizer:Tokenizer=None, vocab:Vocab=None, 
+                classes:Collection[str]=None, text_cols:IntsOrStrs=1, label_cols:IntsOrStrs=0, 
+                label_delim:str=None, chunksize:int=10000, max_vocab:int=60000, min_freq:int=2, 
+                mark_fields:bool=False, pad_idx=0, pad_first=True, bs=64, **kwargs) -> DataBunch:
         "Create a `TextDataBunch` from DataFrames. `kwargs` are passed to the dataloader creation."
-        processor = _get_genomic_processor(tokenizer=tokenizer, vocab=vocab, chunksize=chunksize, max_vocab=max_vocab,
-                                   min_freq=min_freq, mark_fields=mark_fields)
+        if processor is None:
+            processor = _get_genomic_processor(tokenizer=tokenizer, vocab=vocab, 
+                                               chunksize=chunksize, max_vocab=max_vocab,
+                                               min_freq=min_freq, mark_fields=mark_fields)
         
         if classes is None and is_listy(label_cols) and len(label_cols) > 1: 
             classes = label_cols
