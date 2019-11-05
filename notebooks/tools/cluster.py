@@ -87,12 +87,12 @@ def cluster_job(args):
     return y_pred
 
 
-def vis_pca2_clusters(X, pca_degree, selected_algos, n_clusters=25, alpha=0.1):
+def vis_pca2_clusters(X, pca_degree, selected_algos, n_clusters=25, alpha=0.1, savefig=True):
     """
     Visualise PCA2 with cluster algorithms on different PCA degrees.
     """
-    plt.figure(figsize=(24, 24))
-    plt.suptitle("PCA2 Clusters with different clustering algorithms on different PCA degrees.")
+    fig = plt.figure(figsize=(24, 24))
+    name = "PCA2 Clusters with different clustering algorithms on different PCA degrees."; plt.suptitle(name)
     plt.tight_layout()
     plt.subplots_adjust(top=0.95)
     
@@ -124,20 +124,19 @@ def vis_pca2_clusters(X, pca_degree, selected_algos, n_clusters=25, alpha=0.1):
             plt.scatter(X_2[:,0], X_2[:,1], s = 5, alpha=alpha, color=colors[y_pred])
             plot_num += 1
             
+    if savefig:
+        fig.savefig(FIGURES/'gene2vec'/name.lower().replace(' ','_'), dpi=fig.dpi, bbox_inches='tight', pad_inches=0.5)
             
 def vis_clustered_images(genes, dims, clustering_algos, n_clusters=25):
     """
     Visualise genes sorted by cluster with different clustering algos and genevec dimensions.
     """
-    plt.figure(figsize=(24, 24))
     plt.suptitle("Images from different clustering algorithms and genevec model dimensions.")  
-    plt.tight_layout()
-    plt.subplots_adjust(top=0.95)
     
     plot_num = 1
     for dim in dims:
         # load data
-        filename = GENE2VEC_DIR + 'dim_{}/iter_10'.format(dim)
+        filename = str(GENE2VEC) + '/dim_{}/iter_10'.format(dim)
         wv, vocab = load_embeddings(filename)
         
         # get gene subset
@@ -150,8 +149,7 @@ def vis_clustered_images(genes, dims, clustering_algos, n_clusters=25):
         algos = tuple([algo for algo in algos if algo[0] in clustering_algos])
         y_preds = Parallel()(delayed(cluster_job)((name, algo, X)) for name, algo in algos)
         
-        other_algos = ['Unsorted', 'Spectral BiClustering']
-        algos = clustering_algos + other_algos
+        algos = ['Unsorted'] + clustering_algos + ['Spectral BiClustering']
         for i, name in enumerate(algos):
             if name == 'Unsorted':                      # Do nothing
                 X = X
@@ -160,7 +158,7 @@ def vis_clustered_images(genes, dims, clustering_algos, n_clusters=25):
                 X = X[np.argsort(model.row_labels_)]
                 X = X[:, np.argsort(model.column_labels_)]
             else:                                       # Regular clustering gridsearch
-                y_pred = y_preds[i]
+                y_pred = y_preds[i-1]
                 X = X[np.argsort(y_pred),:]
             
             plt.subplot(len(dims), len(algos), plot_num)
@@ -261,7 +259,7 @@ def generate_imageset(df_genevec, df_somatic, cluster1, cluster2, norm):
     plot_num = 1
     somatic = np.repeat(df_somatic.values[:, :, np.newaxis], df_genevec.shape[0], axis=2).transpose([0,2,1])
     if (norm == 'none'):            # Leave X as is 
-        images = somatic * Bdf_genevec.values
+        images = somatic * df_genevec.values
         X = images[:,np.argsort(cluster1),:]; del images
         X = X[:,:,np.argsort(cluster2)]
     elif (norm == 'non-zero'):      # 0,1 normalise all non zero data

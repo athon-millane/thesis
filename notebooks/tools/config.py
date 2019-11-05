@@ -2,33 +2,34 @@ from pathlib import Path
 import multiprocessing
 
 # Environment variables
-HOME_LOCAL  = '/home/jovyan/ml_genomics'
-HOME_REMOTE = '/home/athon/'
+HOME_LOCAL  = Path('/home/jovyan/ml_genomics')
+HOME_REMOTE = Path('/home/athon/')
 HOME        = HOME_REMOTE
-THESIS      = HOME / Path('thesis/')
+THESIS      = HOME / ('thesis')
 
 N_CPUS      = multiprocessing.cpu_count()
 
+FIGURES     = THESIS / 'figures'
 #----------------------------------------------------
 # part 1
 # data
-TCGA        = THESIS / ('data/tcga')
-TCGA_MUT    = TCGA / 'processed_somatic_mutations_subset.csv'
+TCGA        = THESIS /  'data/tcga'
+TCGA_MUT    = TCGA /    'processed_somatic_mutations_subset.csv'
 
-DRIVERS     = THESIS / ('data/drivers')
+DRIVERS     = THESIS /  'data/drivers'
 INTOGEN     = DRIVERS / 'intogen-drivers-data.tsv'
 DRIVERS_ALL = DRIVERS / 'drivers.xlsx'
 DRIVER_LIST = DRIVERS / 'drivers.csv'
 
 # models
-MODELS      = THESIS / ('models')
+MODELS      = THESIS / 'models'
 GENE2VEC    = MODELS / 'gene2vec'
 SKLEARN     = MODELS / 'sklearn-ensemble'
 FASTAI      = MODELS / 'fastai-cnn'
 
 #------------------------------------------------------
 # part 2
-HUMAN       = THESIS / Path('data/human/')
+HUMAN       = THESIS / 'data/human/'
 
 # Dataset params
 NROWS_TRAIN     = 20000

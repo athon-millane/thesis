@@ -60,13 +60,13 @@ def filter_genes(df, by='intogen', number=1348):
     """
     Filter only genes that intersect with listed drivers from Intogen.
     """
-    if by is 'intogen':
+    if by == 'intogen':
         intogen_drivers = pd.read_csv(INTOGEN, sep='\t')
         driver_genes = intogen_drivers['SYMBOL'].head(number).tolist()
     
-    elif by is 'mutsigcv' or by is '2020+':
+    elif by == 'mutsigcv' or by == '2020+':
         driver_genes = pd.read_csv(DRIVER_LIST)[by + '_genes'].head(number).tolist()
-        
+    
     return df[df['Hugo_Symbol'].isin(driver_genes)]
 
 
